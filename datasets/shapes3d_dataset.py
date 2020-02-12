@@ -34,15 +34,44 @@ class Shapes3DDataset(MonoDataset):
         """ Check if the dataset has depth files """
         folder, idx = self.filenames[0].split()
         depth_file = os.path.join(self.data_path, folder, idx + "_a.npy")
+        return False
         return os.path.isfile(depth_file)
 
     def get_depth(self, folder, frame_index, side, do_flip):
-        pass
+        raise NotImplementedError # TODO
 
     def get_color(self, folder, frame_index, side, do_flip):
-        pass
+        path = os.path.join(self.data_path,
+                            folder,
+                            frame_index + '_' side + '.jpg')
+
+        return self.loader(path)
 
     def __getitem__(self, index):
+        """
+        Returns a single training item from the dataset as a dictionary.
+
+        Values correspond to torch tensors.
+        Keys in the dictionary are either strings or tuples:
+
+            ("color", <frame_id>, <scale>)          for raw colour images,
+            ("color_aug", <frame_id>, <scale>)      for augmented colour images,
+            ("K", scale) or ("inv_K", scale)        for camera intrinsics,
+            "stereo_T"                              for camera extrinsics, and
+            "depth_gt"                              for ground truth depth maps.
+
+        <frame_id> is either:
+            an integer (e.g. 0, -1, or 1) representing the temporal step relative to 'index',
+        or
+            "s" for the opposite image in the stereo pair.
+
+        <scale> is an integer representing the scale of the image relative to the fullsize image:
+            -1      images at native resolution as loaded from disk
+            0       images resized to (self.width,      self.height     )
+            1       images resized to (self.width // 2, self.height // 2)
+            2       images resized to (self.width // 4, self.height // 4)
+            3       images resized to (self.width // 8, self.height // 8)
+        """
         inputs = {}
         do_flip = self.is_train and random.random() > 0.5
 
@@ -57,14 +86,25 @@ class Shapes3DDataset(MonoDataset):
             # Scaling K
             K = self.K.copy()
             
-            scale_matrix = np.diag([scale, scale, 1])
-            K = scale_matrix @ self.K
+            scale_matrix = np.diag([2 ** scale, 2 ** scale, 1])
+            K = scale_matrix @ self.K # TODO It should be int
 
             inv_K = np.linalg.inv(K)
             
             inputs[('K', scale)] = torch.from_numpy(K)
             inputs[('inv_K', scale)] = torch.from_numpy(inv_K)
 
-            for idx in self.frame_idxs:
-                inputs[('color', idx, scale)] = self.get_color(folder, file_name, self.frames[idx], do_flip)
-            inputs('color', scale, 
+        # TODO color augmentation
+        color_aug = (lambda x: x)
+        self.preporcess(inputs, color_aug)
+        
+        for idx in self.frame_idxs:
+            del inputs[("color", idx, -1)]
+            del inputs[("color_aug", idx, -1)]
+
+        if self.load_depth:
+            depth_gt = self.get_depth(folder, file_name, 'a', do_flip)
+            depth_gt = np.expand_dims(depth_gt, 0) # TODO dont know why
+            inputs["depth_gt"] = torch.from_numpy(depth_gt.astype(np.float32))
+
+        return inputs
