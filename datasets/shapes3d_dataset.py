@@ -20,13 +20,14 @@ class Shapes3DDataset(MonoDataset):
             - frame_idxs: the number of the frames. Default: [-1, 0, 1] it should be [a, b, c]
     """
     def __init__(self, *args, **kwargs):
-        super(Shapes3dDataset, self).__init__(*args, **kwargs)
+        super(Shapes3DDataset, self).__init__(*args, **kwargs)
 
-        with open(os.path.join(self.data_path, "intrinsic_matrix.txt"), 'r') as f:
-            intrinsic = f.read().splitlines()
-        intrinsic = [int(x) for x in intrinsic]
+        matrix_file = os.path.join(self.data_path, "intrinsic_matrix.txt")
+        with open(matrix_file, 'r') as f:
+            intrinsic = f.read().splitlines()[0]
+        intrinsic = [float(x) for x in intrinsic.split()]
 
-        self.K = np.array(intrinsic, dtype=np.float32).reshape(4,4)
+        self.K = np.array(intrinsic, dtype=np.float64).reshape(4,4)
         self.full_res_shape = (300, 300)
         self.frames = ['b', 'c', 'a'] # so it maps to -1->a
 
@@ -43,9 +44,10 @@ class Shapes3DDataset(MonoDataset):
     def get_color(self, folder, frame_index, side, do_flip):
         path = os.path.join(self.data_path,
                             folder,
-                            frame_index + '_' side + '.jpg')
+                            frame_index + '_' + side + '.jpg')
 
-        return self.loader(path)
+        color =  self.loader(path)
+        return color
 
     def __getitem__(self, index):
         """
@@ -86,17 +88,18 @@ class Shapes3DDataset(MonoDataset):
             # Scaling K
             K = self.K.copy()
             
-            scale_matrix = np.diag([2 ** scale, 2 ** scale, 1])
+            scale_matrix = np.diag([1 // (2 ** scale), 1 // (2 ** scale), 1, 1])
             K = scale_matrix @ self.K # TODO It should be int
 
-            inv_K = np.linalg.inv(K)
+            inv_K = np.linalg.pinv(K)
+            #inv_K = np.float32(inv_K)
             
             inputs[('K', scale)] = torch.from_numpy(K)
             inputs[('inv_K', scale)] = torch.from_numpy(inv_K)
 
         # TODO color augmentation
         color_aug = (lambda x: x)
-        self.preporcess(inputs, color_aug)
+        self.preprocess(inputs, color_aug)
         
         for idx in self.frame_idxs:
             del inputs[("color", idx, -1)]
