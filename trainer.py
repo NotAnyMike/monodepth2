@@ -87,6 +87,11 @@ class Trainer:
             self.models["pose"].to(self.device)
             self.parameters_to_train += list(self.models["pose"].parameters())
 
+        if self.opt.use_intrinsic_net:
+            self.models["intrinsic"] = networks.IntrinsicNet(self.opt.batch_size)
+            self.models["intrinsic"].to(self.device)
+            self.parameters_to_train += list(self.models["intrinsic"].parameters())
+
         if self.opt.predictive_mask:
             assert self.opt.disable_automasking, \
                 "When using predictive_mask, please disable automasking with --disable_automasking"
@@ -252,6 +257,9 @@ class Trainer:
         if self.opt.predictive_mask:
             outputs["predictive_mask"] = self.models["predictive_mask"](features)
 
+        if self.opt.use_intrinsic_net:
+            outputs.update(self.predict_intrinsic(inputs))
+
         if self.use_pose_net:
             outputs.update(self.predict_poses(inputs, features))
 
@@ -259,6 +267,18 @@ class Trainer:
         losses = self.compute_losses(inputs, outputs)
 
         return outputs, losses
+
+    def predict_intrinsic(self, inputs):
+        """Creates K and K_inv for all scales and return them as dic.
+        """
+        outputs = {}
+        K = self.models['intrinsic'](inputs["color_aug", self.opt.frame_ids[0], 0])
+
+        for s in range(self.opt.num_scales):
+            outputs[("K", s)] = K // (2 ** s)
+            outputs[("inv_K", s)] = (K // (2 ** s)).inverse()
+
+        return outputs
 
     def predict_poses(self, inputs, features):
         """Predict poses between input frames for monocular sequences.
@@ -375,10 +395,16 @@ class Trainer:
                     T = transformation_from_parameters(
                         axisangle[:, 0], translation[:, 0] * mean_inv_depth[:, 0], frame_id < 0)
 
-                cam_points = self.backproject_depth[source_scale](
-                    depth, inputs[("inv_K", source_scale)])
-                pix_coords = self.project_3d[source_scale](
-                    cam_points, inputs[("K", source_scale)], T)
+                if self.opt.use_intrinsic_net:
+                    cam_points = self.backproject_depth[source_scale](
+                        depth, outputs[("inv_K", source_scale)])
+                    pix_coords = self.project_3d[source_scale](
+                        cam_points, outputs[("K", source_scale)], T)
+                else:
+                    cam_points = self.backproject_depth[source_scale](
+                        depth, inputs[("inv_K", source_scale)])
+                    pix_coords = self.project_3d[source_scale](
+                        cam_points, inputs[("K", source_scale)], T)
 
                 outputs[("sample", frame_id, scale)] = pix_coords
 

@@ -82,6 +82,9 @@ class MonodepthOptions:
                                  type=int,
                                  help="frames to load",
                                  default=[0, -1, 1])
+        self.parser.add_argument("--use_intrinsic_net",
+                                 action="store_true",
+                                 help="Estimate K or use the ground truth")
 
         # OPTIMIZATION options
         self.parser.add_argument("--batch_size",

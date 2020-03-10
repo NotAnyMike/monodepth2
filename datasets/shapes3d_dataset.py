@@ -88,16 +88,13 @@ class Shapes3DDataset(MonoDataset):
             # Scaling K
             K = self.K.copy()
             
-            #scale_matrix = np.diag([1 // (2 ** scale), 1 // (2 ** scale), 1, 1])
-            #K = scale_matrix @ self.K # TODO It should be int
-            K[0, :] *= self.width // (2 ** scale)
-            K[1, :] *= self.height // (2 ** scale)
+            scale_matrix = np.diag([1 / (2 ** scale), 1 / (2 ** scale), 1, 1])
+            K = scale_matrix @ self.K # TODO It should be int
 
             inv_K = np.linalg.pinv(K)
-            #inv_K = np.float32(inv_K)
             
-            inputs[('K', scale)] = torch.from_numpy(K)
-            inputs[('inv_K', scale)] = torch.from_numpy(inv_K)
+            inputs[('K', scale)] = torch.from_numpy(K).float()
+            inputs[('inv_K', scale)] = torch.from_numpy(inv_K).float()
 
         # TODO color augmentation
         color_aug = (lambda x: x)
