@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import time
+from pdb import set_trace
 
 import torch
 import torch.nn.functional as F
@@ -272,11 +273,18 @@ class Trainer:
         """Creates K and K_inv for all scales and return them as dic.
         """
         outputs = {}
-        K = self.models['intrinsic'](inputs["color_aug", self.opt.frame_ids[0], 0])
+        K_vec = self.models['intrinsic'](inputs["color_aug", self.opt.frame_ids[0], 0])
+        K = torch.eye(4, device=self.device).view(1, 4, 4).expand(self.opt.batch_size, -1, -1)
 
-        for s in range(self.opt.num_scales):
-            outputs[("K", s)] = K // (2 ** s)
-            outputs[("inv_K", s)] = (K // (2 ** s)).inverse()
+        K[:, 0, 0] = K_vec[:, 0]
+        K[:, 1, 1] = K_vec[:, 1]
+        K[:, 0, 2] = K_vec[:, 2]
+        K[:, 1, 2] = K_vec[:, 3]
+        K[:, 0, 1] = K_vec[:, 4]
+
+        for s in range(self.num_scales):
+            outputs[("K", s)] = K / (2 ** s)
+            outputs[("inv_K", s)] = (K / (2 ** s)).inverse()
 
         return outputs
 
