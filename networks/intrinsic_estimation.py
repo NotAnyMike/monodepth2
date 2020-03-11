@@ -21,10 +21,8 @@ class IntrinsicNet(nn.Module):
         self.num_convs = len(self.convs)
 
         self.relu = nn.ReLU(True)
-
-        K = nn.Parameter(torch.eye(4).float().view(1,4,4).repeat(batch_size, 1, 1),
-                         requires_grad=False)
-        self.K = K
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
 
         self.net = nn.ModuleList(list(self.convs.values()))
 
@@ -36,16 +34,7 @@ class IntrinsicNet(nn.Module):
         out = self.intrinsic_conv(out)
         out = out.mean(3).mean(2)
 
-        #out = 0.01 * out.view(-1, self.num_input_frames - 1, 1, 6)
-
-        out = 0.01 * out#.view(-1, 4, 4)
-
-        #out = 0.01 * out
-        #K = self.K
-        #K[:, 0, 0] = out[:, 0]
-        #K[:, 1, 1] = out[:, 1]
-        #K[:, 0, 2] = out[:, 2]
-        #K[:, 1, 2] = out[:, 3]
-        #K[:, 0, 1] = out[:, 4]
+        out[:, :4] = self.sigmoid(out[:, :4])
+        out[:, 4] = self.tanh(out[:, 4])
 
         return out
