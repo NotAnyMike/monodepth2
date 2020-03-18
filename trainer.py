@@ -89,7 +89,7 @@ class Trainer:
             self.parameters_to_train += list(self.models["pose"].parameters())
 
         if self.opt.use_intrinsic_net:
-            self.models["intrinsic"] = networks.IntrinsicNet(self.opt.batch_size)
+            self.models["intrinsic"] = networks.IntrinsicNet()
             self.models["intrinsic"].to(self.device)
             self.parameters_to_train += list(self.models["intrinsic"].parameters())
 
@@ -280,7 +280,6 @@ class Trainer:
         K[:, 1, 1] = K_vec[:, 1]
         K[:, 0, 2] = K_vec[:, 2]
         K[:, 1, 2] = K_vec[:, 3]
-        K[:, 0, 1] = K_vec[:, 4]
 
         for s in range(self.num_scales):
             outputs[("K", s)] = K / (2 ** s)
@@ -578,6 +577,15 @@ class Trainer:
         writer = self.writers[mode]
         for l, v in losses.items():
             writer.add_scalar("{}".format(l), v, self.step)
+
+        writer.add_scalar("K/[0,0]", outputs[('K', 0)][:, 0, 0].mean(0).data, self.step)
+        writer.add_scalar("K/[1,1]", outputs[('K', 0)][:, 1, 1].mean(0).data, self.step)
+        writer.add_scalar("K/[0,2]", outputs[('K', 0)][:, 0, 2].mean(0).data, self.step)
+        writer.add_scalar("K/[1,2]", outputs[('K', 0)][:, 1, 2].mean(0).data, self.step)
+        writer.add_scalar("K/[2,2]", outputs[('K', 0)][:, 2, 2].mean(0).data, self.step)
+        writer.add_scalar("K/[3,3]", outputs[('K', 0)][:, 3, 3].mean(0).data, self.step)
+        writer.add_scalar("K/[0,1]", outputs[('K', 0)][:, 0, 1].mean(0).data, self.step)
+        writer.add_scalar("K/[2,1]", outputs[('K', 0)][:, 2, 1].mean(0).data, self.step)
 
         for j in range(min(4, self.opt.batch_size)):  # write a maxmimum of four images
             for s in self.opt.scales:

@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 class IntrinsicNet(nn.Module):
-    def __init__(self, batch_size):
+    def __init__(self):
         super(IntrinsicNet, self).__init__()
 
         self.convs = {}
@@ -16,13 +16,12 @@ class IntrinsicNet(nn.Module):
         self.convs[5] = nn.Conv2d(256, 256, 3, 2, 1)
         self.convs[6] = nn.Conv2d(256, 256, 3, 2, 1)
 
-        self.intrinsic_conv = nn.Conv2d(256, 5, 1) # org is 5
+        self.intrinsic_conv = nn.Conv2d(256, 4, 1) # org is 5
 
         self.num_convs = len(self.convs)
 
         self.relu = nn.ReLU(True)
         self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh()
 
         self.net = nn.ModuleList(list(self.convs.values()))
 
@@ -33,8 +32,8 @@ class IntrinsicNet(nn.Module):
 
         out = self.intrinsic_conv(out)
         out = out.mean(3).mean(2)
+        out = self.sigmoid(out)
 
-        out[:, :4] = self.sigmoid(out[:, :4])
-        out[:, 4] = self.tanh(out[:, 4])
+        out = 1000.0 * out
 
         return out
