@@ -1,4 +1,8 @@
-# Monodepth2
+# Monodepth2 - Extended
+
+**This version is an extension of Monodepth2, you can run with unknown intrinsic parameters by using the flat `--use_intrinsic_net`**. Simple comparison shows slight improvements.
+
+------
 
 This is the reference PyTorch implementation for training and testing depth estimation models using the method described in
 
