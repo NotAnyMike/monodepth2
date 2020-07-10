@@ -1,6 +1,6 @@
 # Monodepth2 - Extended
 
-**This version is an extension of Monodepth2, you can run with unknown intrinsic parameters by using the flat `--use_intrinsic_net`**. Simple comparison shows slight improvements.
+**This version is an extension of Monodepth2, you can run with unknown intrinsic parameters by using the flag `--use_intrinsic_net`**. Simple comparison shows slight improvements.
 
 ------
 
