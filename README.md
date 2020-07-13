@@ -1,6 +1,12 @@
 # Monodepth2 - Extended
 
-**This version is an extension of Monodepth2, you can run with unknown intrinsic parameters by using the flat `--use_intrinsic_net`**. Simple comparison shows slight improvements.
+#### Extended: [[Datasets](#🗂 datasets)] | [[Training](#training-without-intrinsic-parameters)]
+
+#### Original: [[Setup](#⚙️ Setup)]  | [[Prediction](#🖼️-Prediction-for-a-single-image)]  |  [[KITTI](#💾 KITTI training data)]  |  [[Training](#⏳ Training)]  |  [[Finetuning](#💽 Finetuning a pretrained model)]  |  [[Weigths](#📦 Precomputed results)]
+
+**This version is an extension of Monodepth2**, you can run with unknown intrinsic parameters by using the flat `--use_intrinsic_net` or run it with more generic dataset. Simple comparison shows slight improvements.
+
+
 
 ------
 
@@ -49,7 +55,6 @@ We have also successfully trained models with PyTorch 1.0, and our code is compa
 <!-- We recommend using a [conda environment](https://conda.io/docs/user-guide/tasks/manage-environments.html) to avoid dependency conflicts.
 
 We also recommend using `pillow-simd` instead of `pillow` for faster image preprocessing in the dataloaders. -->
-
 
 ## 🖼️ Prediction for a single image
 
@@ -113,6 +118,37 @@ You can also train a model using the new [benchmark split](http://www.cvlibs.net
 
 You can train on a custom monocular or stereo dataset by writing a new dataloader class which inherits from `MonoDataset` – see the `KITTIDataset` class in `datasets/kitti_dataset.py` for an example.
 
+## 🗂 Datasets
+
+There are different datasets you can use for training, see `python train.py --help`.
+
+### Generic Dataset
+
+Generic dataset is a generic dataset loader. The main structure of a generic dataset is as follows:
+
+* A `train_files.txt` file with the paths for all the training samples.
+
+* A `val_files.txt` file with all the paths for all the validation samples.
+
+* A root folder containing all the sequences of images. Each sequence of images (from the same video) should be in their own folder. For example. And images from the same sequence should be sequential in the `.txt` files.
+
+  ```
+  /Generic_dataset
+  ---/Sequence_1
+  ------/img_1.jpg
+  ------/img_2.jpg
+  ------ ...
+  ---/Sequence_2
+  ------/img_a.jpg
+  ------/img_c.jpg
+  ------ ...
+  ```
+
+  
+
+Move all the `.txt` files to the folder `splits/generic`. The `.txt` files have to contain the path to the images from where `train.py` was launch, therefore we recommend using absolute paths. The name of each image file or sequence folder does not matter, the order will be taken from the `.txt` files, therefore if image `z.jpg`  is before image `a.jpg` in the `train.txt` then image `z.jpg` goes first.
+
+Images have to have jpg or png extension.
 
 ## ⏳ Training
 
@@ -138,6 +174,22 @@ python train.py --model_name stereo_model \
 python train.py --model_name mono+stereo_model \
   --frame_ids 0 -1 1 --use_stereo
 ```
+
+##### Training without intrinsic parameters
+
+A simple training using estimation for intrinsic parameters will look like
+
+```shell
+python train.py --model_name estimating_K --use_intrinsic_net
+```
+
+A usual command using this extended version will look like
+
+```shell
+python train.py --model_name bs_pretrained --split generic --dataset generic --height 544 --width 960 --batch_size 6 --use_intrinsic_net --log_dir logs
+/bs_pretrained --load_weights_folder ./models/weights_19
+```
+
 
 
 ### GPUs
@@ -169,7 +221,6 @@ python train.py --model_name finetuned_mono --load_weights_folder ~/tmp/mono_mod
 ### 🔧 Other training options
 
 Run `python train.py -h` (or look at `options.py`) to see the range of other training options, such as learning rates and ablation settings.
-
 
 ## 📊 KITTI evaluation
 
@@ -231,7 +282,6 @@ If this data has been unzipped to folder `kitti_odom`, a model can be evaluated 
 python evaluate_pose.py --eval_split odom_9 --load_weights_folder ./odom_split.M/models/weights_29 --data_path kitti_odom/
 python evaluate_pose.py --eval_split odom_10 --load_weights_folder ./odom_split.M/models/weights_29 --data_path kitti_odom/
 ```
-
 
 ## 📦 Precomputed results
 
