@@ -1,8 +1,8 @@
 # Monodepth2 - Extended
 
-#### Extended: [[Datasets](#🗂 datasets)] | [[Training](#training-without-intrinsic-parameters)]
+#### Extended: [[Datasets](#-datasets)] | [[Training](#training-without-intrinsic-parameters)]
 
-#### Original: [[Setup](#⚙️ Setup)]  | [[Prediction](#🖼️-Prediction-for-a-single-image)]  |  [[KITTI](#💾 KITTI training data)]  |  [[Training](#⏳ Training)]  |  [[Finetuning](#💽 Finetuning a pretrained model)]  |  [[Weigths](#📦 Precomputed results)]
+#### Original: [[Setup](#%EF%B8%8F-setup)]  | [[Prediction](#%EF%B8%8F-prediction-for-a-single-image)]  |  [[KITTI](#-kitti-training-data)]  |  [[Training](#-training)]  |  [[Finetuning](#-finetuning-a-pretrained-model)]  |  [[Results](#-precomputed-results)]
 
 **This version is an extension of Monodepth2**, you can run with unknown intrinsic parameters by using the flag `--use_intrinsic_net` or run it with more generic dataset. Simple comparison shows slight improvements.
 
