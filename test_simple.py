@@ -42,12 +42,18 @@ def parse_args():
                             "stereo_1024x320",
                             "weights_19",
                             "ml",
+                            "ml_pretrained",
+                            "moving_actors",
                             "mono+stereo_1024x320"])
     parser.add_argument('--ext', type=str,
                         help='image extension to search for in folder', default="jpg")
     parser.add_argument("--no_cuda",
                         help='if set, disables CUDA',
                         action='store_true')
+    parser.add_argument('--output_folder', type=str,
+                        help="Path to the existing output folder", required=False)
+    parser.add_argument("--use_intrinsic_net", action="store_true",
+                        help="Save the estimated instrinsic parameters")
 
     return parser.parse_args()
 
@@ -68,6 +74,7 @@ def test_simple(args):
     print("-> Loading model from ", model_path)
     encoder_path = os.path.join(model_path, "encoder.pth")
     depth_decoder_path = os.path.join(model_path, "depth.pth")
+    intrinsic_net_path = os.path.join(model_path, "intrinsic.pth")
 
     # LOADING PRETRAINED MODEL
     print("   Loading pretrained encoder")
@@ -85,22 +92,35 @@ def test_simple(args):
     print("   Loading pretrained decoder")
     depth_decoder = networks.DepthDecoder(
         num_ch_enc=encoder.num_ch_enc, scales=range(4))
-
     loaded_dict = torch.load(depth_decoder_path, map_location=device)
     depth_decoder.load_state_dict(loaded_dict)
-
     depth_decoder.to(device)
     depth_decoder.eval()
+
+
+    print("   Loading pretrained IntrinsicNet")
+    if args.use_intrinsic_net:
+        intrinsic_net = networks.IntrinsicNet()
+        loaded_dict = torch.load(intrinsic_net_path, map_location=device)
+        intrinsic_net.load_state_dict(loaded_dict)
+        intrinsic_net.to(device)
+        intrinsic_net.eval()
 
     # FINDING INPUT IMAGES
     if os.path.isfile(args.image_path):
         # Only testing on a single image
         paths = [args.image_path]
-        output_directory = os.path.dirname(args.image_path)
+        if 'output_folder' in vars(args):
+            output_directory = args.output_folder
+        else:
+            output_directory = os.path.dirname(args.image_path)
     elif os.path.isdir(args.image_path):
         # Searching folder for images
         paths = glob.glob(os.path.join(args.image_path, '*.{}'.format(args.ext)))
-        output_directory = args.image_path
+        if 'output_folder' in vars(args):
+            output_directory = args.output_folder
+        else:
+            output_directory = args.image_path
     else:
         raise Exception("Can not find args.image_path: {}".format(args.image_path))
 
@@ -124,6 +144,8 @@ def test_simple(args):
             input_image = input_image.to(device)
             features = encoder(input_image)
             outputs = depth_decoder(features)
+            if args.use_intrinsic_net:
+                intrinsics = intrinsic_net(input_image)
 
             disp = outputs[("disp", 0)]
             disp_resized = torch.nn.functional.interpolate(
@@ -134,6 +156,12 @@ def test_simple(args):
             name_dest_npy = os.path.join(output_directory, "{}_disp.npy".format(output_name))
             scaled_disp, _ = disp_to_depth(disp, 0.1, 100)
             np.save(name_dest_npy, scaled_disp.cpu().numpy())
+
+            # Saving intrinsic parameters
+            if args.use_intrinsic_net:
+                output_name_K = os.path.splitext(os.path.basename(image_path))[0]
+                name_dest_npy_K = os.path.join(output_directory, "{}_K.npy".format(output_name))
+                np.save(name_dest_npy_K, intrinsics.cpu().numpy())
 
             # Saving colormapped depth image
             disp_resized_np = disp_resized.squeeze().cpu().numpy()

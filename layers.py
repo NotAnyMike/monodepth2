@@ -266,4 +266,5 @@ def compute_depth_errors(gt, pred):
 
     sq_rel = torch.mean((gt - pred) ** 2 / gt)
 
+    print(abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3)
     return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3

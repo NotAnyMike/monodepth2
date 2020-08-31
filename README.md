@@ -149,6 +149,33 @@ Move all the `.txt` files to the folder `splits/generic`. The `.txt` files have 
 
 Images have to have jpg or png extension.
 
+
+
+### How to generate a generic dataset
+
+1. Generate images with 
+
+```shell
+ffmpeg -i input_1.mp4 -qscale:v 0 -s 960x544 dataset/input_1/%d.jpg
+```
+
+* where `dataset/input_1/...`  follows the per sequence grouping of the images. 
+* where `-s 960x544` resizes the images to that dimensions, those are the dimensions that will be used to train the model, they have to be multiple of 32
+
+2. Generate `.txt`  files with 
+
+   ```shell
+   find "${PWD%/*}" -type f -name '*.jpg' | sort -V > train_files.txt
+   ```
+
+   This will show all `.jpg` files in the current folder using their absolute path and sort them taking into account digits and not just characters and save the result in `train_files.txt`
+
+3. Take some contiguous samples from the file for the validation set. Or you can also have a validation sequence, in that case run 2 again only for that sequence.
+
+You are ready to train :slightly_smiling_face:
+
+
+
 ## ⏳ Training
 
 By default models and tensorboard event files are saved to `~/tmp/<model_name>`.
