@@ -48,6 +48,12 @@ conda install pytorch=0.4.1 torchvision=0.2.1 -c pytorch
 pip install tensorboardX==1.4
 conda install opencv=3.3.1   # just needed for evaluation
 ```
+
+or you can run
+```shell
+conda env create -f environment.yml
+```
+
 We ran our experiments with PyTorch 0.4.1, CUDA 9.1, Python 3.6.6 and Ubuntu 18.04.
 We have also successfully trained models with PyTorch 1.0, and our code is compatible with Python 2.7. You may have issues installing OpenCV version 3.3.1 if you use Python 3.7, we recommend to create a virtual environment with Python 3.6.6 `conda create -n monodepth2 python=3.6.6 anaconda `.
 
@@ -143,7 +149,7 @@ Generic dataset is a generic dataset loader. The main structure of a generic dat
   ------ ...
   ```
 
-  
+
 
 Move all the `.txt` files to the folder `splits/generic`. The `.txt` files have to contain the path to the images from where `train.py` was launch, therefore we recommend using absolute paths. The name of each image file or sequence folder does not matter, the order will be taken from the `.txt` files, therefore if image `z.jpg`  is before image `a.jpg` in the `train.txt` then image `z.jpg` goes first.
 
@@ -153,16 +159,16 @@ Images have to have jpg or png extension.
 
 ### How to generate a generic dataset
 
-1. Generate images with 
+1. Generate images with
 
 ```shell
 ffmpeg -i input_1.mp4 -qscale:v 0 -s 960x544 dataset/input_1/%d.jpg
 ```
 
-* where `dataset/input_1/...`  follows the per sequence grouping of the images. 
+* where `dataset/input_1/...`  follows the per sequence grouping of the images.
 * where `-s 960x544` resizes the images to that dimensions, those are the dimensions that will be used to train the model, they have to be multiple of 32
 
-2. Generate `.txt`  files with 
+2. Generate `.txt`  files with
 
    ```shell
    find "${PWD%/*}" -type f -name '*.jpg' | sort -V > train_files.txt
