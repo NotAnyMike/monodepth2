@@ -1,0 +1,9 @@
+name: monodepth2
+dependencies:
+    - pytorch=0.4.1
+    - torchvision=0.2.1
+    - pip
+    - pip:
+        - tensorboardX
+        - scikit-image
+    - opencv=3.3.1
