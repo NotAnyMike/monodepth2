@@ -211,8 +211,6 @@ class Trainer:
     def run_epoch(self):
         """Run a single epoch of training and validation
         """
-        self.model_lr_scheduler.step()
-
         print("Training")
         self.set_train()
 
@@ -245,6 +243,9 @@ class Trainer:
                 self.val()
 
             self.step += 1
+
+        # if in pytorch < 1.1.0 run this at start of run_epoch and not at the end
+        self.model_lr_scheduler.step() 
 
     def process_batch(self, inputs):
         """Pass a minibatch through the network and generate images and losses
@@ -288,7 +289,7 @@ class Trainer:
         """
         outputs = {}
         K_vec = self.models['intrinsic'](inputs["color_aug", self.opt.frame_ids[0], 0])
-        K = torch.eye(4, device=self.device).view(1, 4, 4).expand(self.opt.batch_size, -1, -1)
+        K = torch.eye(4, device=self.device).view(1, 4, 4).repeat(self.opt.batch_size, 1, 1)
 
         K[:, 0, 0] = K_vec[:, 0]
         K[:, 1, 1] = K_vec[:, 1]
