@@ -10,6 +10,7 @@ import numpy as np
 import time
 from pdb import set_trace
 
+from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -132,9 +133,15 @@ class Trainer:
         num_train_samples = len(train_filenames)
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
-        train_dataset = self.dataset(
-            self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
-            self.opt.frame_ids, 4, is_train=True, img_ext=img_ext)
+        if self.opt.dataset == "generic":
+            train_dataset = self.dataset(
+                self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
+                self.opt.frame_ids, 4, is_train=True, img_ext=img_ext, repeat=self.opt.repeat)
+        else:
+            train_dataset = self.dataset(
+                self.opt.data_path, train_filenames, self.opt.height, self.opt.width,
+                self.opt.frame_ids, 4, is_train=True, img_ext=img_ext)
+
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
@@ -193,7 +200,10 @@ class Trainer:
         self.epoch = 0
         self.step = 0
         self.start_time = time.time()
-        for self.epoch in range(self.opt.num_epochs):
+        bar = tqdm(range(self.opt.num_epochs),
+                   total=self.opt.num_epochs,
+                   desc="Total train:")
+        for self.epoch in bar:
             self.run_epoch()
             if (self.epoch + 1) % self.opt.save_frequency == 0:
                 self.save_model()
@@ -206,7 +216,10 @@ class Trainer:
         print("Training")
         self.set_train()
 
-        for batch_idx, inputs in enumerate(self.train_loader):
+        bar = tqdm(enumerate(self.train_loader),
+                   total=len(self.train_loader),
+                   desc="Epoch {:d}:".format(self.epoch))
+        for batch_idx, inputs in bar:
 
             before_op_time = time.time()
 

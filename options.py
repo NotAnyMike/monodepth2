@@ -33,9 +33,12 @@ class MonodepthOptions:
                                  default="mdp")
         self.parser.add_argument("--split",
                                  type=str,
-                                 help="which training split to use",
-                                 choices=["eigen_zhou", "eigen_full", "odom", "benchmark", "shapes3d", "generic"],
+                                 help="which training split to use, see split folder",
                                  default="eigen_zhou")
+        self.parser.add_argument("--repeat",
+                                 type=int,
+                                 help="Times to repeat the elements of the training dataset. Only for generic types",
+                                 default=1)
         self.parser.add_argument("--num_layers",
                                  type=int,
                                  help="number of resnet layers",

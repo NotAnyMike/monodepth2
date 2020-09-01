@@ -23,8 +23,10 @@ class GenericDataset(MonoDataset):
             val_samples (str): Str of the path of the txt file with the path for each val sample
             train_samples (str): Str of the path of the txt file with the path for each train sample
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, repeat=1, **kwargs):
         super(GenericDataset, self).__init__(*args, **kwargs)
+
+        self.repeat = int(repeat)
 
         self.min_frame = abs(min(min(self.frame_idxs), 0))
         self.max_frame = abs(max(max(self.frame_idxs), 0))
@@ -51,7 +53,7 @@ class GenericDataset(MonoDataset):
 
     def __len__(self):
         # number of elements minus the number of pre and post idx
-        return len(self.filenames_robust)
+        return len(self.filenames_robust) * self.repeat
 
     def __getitem__(self, index):
         """
@@ -73,6 +75,7 @@ class GenericDataset(MonoDataset):
             2       images resized to (self.width // 4, self.height // 4)
             3       images resized to (self.width // 8, self.height // 8)
         """
+        index = index % len(self.filenames_robust)
         inputs = {}
         do_flip = self.is_train and random.random() > 0.5
 
