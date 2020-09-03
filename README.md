@@ -49,7 +49,7 @@ pip install tensorboardX==1.4
 conda install opencv=3.3.1   # just needed for evaluation
 ```
 
-or you can run
+or you can run (much easier)
 ```shell
 conda env create -f environment.yml
 ```
